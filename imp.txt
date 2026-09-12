@@ -1,0 +1,13 @@
+Deployment successfully updated.
+Version 1 on Jul 24, 2026, 5:06 PM
+Deployment ID
+AKfycby6xxm5ItCCd-z8tlMzYxZMx0xHn7IYdLY_iCOD0KxBi_sbDfDFyf00RQzQE_rj_s9x
+Web app
+URL
+https://script.google.com/macros/s/AKfycby6xxm5ItCCd-z8tlMzYxZMx0xHn7IYdLY_iCOD0KxBi_sbDfDFyf00RQzQE_rj_s9x/exec
+
+
+SUPABASE DETAILS:
+careerlift main website
+Pass : pNpCU3wJatdeA!sP^rOq
+

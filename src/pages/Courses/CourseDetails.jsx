@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
+import { supabase } from '../../config/supabase';
 import { 
   CheckCircle2, Clock, Star, BookOpen, Award, Users, 
   ShieldCheck, ArrowRight, Briefcase, Target, Phone, MapPin, 
@@ -289,25 +290,65 @@ export default function CourseDetails() {
 
   const [activeTab, setActiveTab] = useState(0);
   const [showModal, setShowModal] = useState(false);
+  const [dynamicCourse, setDynamicCourse] = useState(null);
+  const [fetchDone, setFetchDone] = useState(false); // 👈 ফেচ শেষ হলে ট্র্যাক করবে (ফেইল হলেও fallback দেখাবে)
   const [formData, setFormData] = useState({ 
     name: '', phone: '', interest: '', source: 'Course Details Page' 
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitSuccess, setSubmitSuccess] = useState(false);
 
+  // ID পরিবর্তন হলে স্ক্রল টপ এবং পুরনো ডায়নামিক ডেটা রিসেট
   useEffect(() => {
     window.scrollTo(0, 0);
+    setDynamicCourse(null);
+    setFetchDone(false);
   }, [id]);
 
-  const fallbackCourse = detailedCourses["1"];
-  const course = detailedCourses[id] || fallbackCourse;
+  // হার্ডকোডেড লিস্টে কোর্স আছে কিনা চেক
+  const staticCourse = detailedCourses[id]; // ডেটাবেসের ID দিলে এখানে undefined আসবে
+
+  // 👈 যদি হার্ডকোডে না থাকে, তবে ডেটাবেস (Supabase) থেকে খুঁজবে
+  useEffect(() => {
+    if (!staticCourse) {
+      const fetchCourse = async () => {
+        const { data, error } = await supabase
+          .from('dynamic_courses')
+          .select('*')
+          .eq('id', id)
+          .single();
+
+        if (data && !error) {
+          setDynamicCourse({
+            id: data.id,
+            category: data.category,
+            image: data.image,
+            title: { EN: data.title_en, BN: data.title_bn },
+            desc: { EN: data.desc_en, BN: data.desc_bn },
+            duration: data.duration,
+            rating: data.rating,
+            reviews: data.reviews,
+            eligibility: { EN: data.eligibility_en, BN: data.eligibility_bn },
+            audience: data.audience || [],
+            syllabus: data.syllabus || [],
+            career: { EN: data.career_en, BN: data.career_bn }
+          });
+        }
+        setFetchDone(true); // সফল বা ব্যর্থ — ফেচ শেষ
+      };
+      fetchCourse();
+    }
+  }, [id, staticCourse]);
+
+  // চূড়ান্ত কোর্স ভেরিয়েবল: স্ট্যাটিক > ডায়নামিক > fallback
+  const course = staticCourse || dynamicCourse || detailedCourses["1"];
 
   // ✅ SAFELY SYNC INTEREST WITHOUT CAUSING INFINITE LOOPS
   useEffect(() => {
     if (course && course.title) {
       setFormData(prev => ({ ...prev, interest: course.title[currentLang] || '' }));
     }
-  }, [id, currentLang]);
+  }, [id, currentLang, course]);
 
   const handleFormSubmit = async (e) => {
     e.preventDefault();
@@ -333,6 +374,18 @@ export default function CourseDetails() {
     }
   };
 
+  // ✅ LOADING STATE — সব hook-এর পরে রাখা হয়েছে (Rules of Hooks)
+  if (!staticCourse && !dynamicCourse && !fetchDone) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-slate-50">
+        <div className="text-center space-y-3">
+          <div className="w-10 h-10 border-4 border-blue-600 border-t-transparent rounded-full animate-spin mx-auto"></div>
+          <p className="text-sm font-bold text-slate-500">Loading Course Details...</p>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="bg-slate-50 min-h-screen pb-20">
       
@@ -348,7 +401,7 @@ export default function CourseDetails() {
             className="inline-flex items-center space-x-2 text-xs sm:text-sm font-bold text-slate-400 hover:text-white transition-colors mb-6 sm:mb-8 group bg-white/5 border border-white/10 px-4 py-2 rounded-xl backdrop-blur-md w-fit"
           >
             <ArrowLeft size={16} className="group-hover:-translate-x-1 transition-transform text-blue-400" />
-            <span>{currentLang === 'EN' ? 'Back to All Courses' : 'কোর্স তালিকায় ফিরে যান'}</span>
+            <span>{currentLang === 'EN' ? 'Back to All Courses' : 'কোর্স তালিকায় ফিরে যান'}</span>
           </Link>
 
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12 items-center">
@@ -498,7 +551,7 @@ export default function CourseDetails() {
                         <div className="px-5 pb-5 pt-1 text-xs sm:text-sm text-slate-600 font-medium leading-relaxed border-t border-blue-100/60 mt-1">
                           {currentLang === 'EN'
                             ? 'This comprehensive module includes theoretical foundations, practical laboratory drills, assessment checklists, and real-world clinical case studies aligned with NSDA guidelines.'
-                            : 'এই মডিউলে রয়েছে তাত্ত্বিক ধারণা, ল্যাবরেটরি প্র্যাক্টিক্যাল ড্রিল এবং বাংলাদেশ কারিগরি শিক্ষা বোর্ডের (NSDA) নীতিমালা অনুযায়ী বাস্তব কর্মক্ষেত্রের গাইডলাইন।'}
+                            : 'এই মডিউলে রয়েছে তাত্ত্বিক ধারণা, ল্যাবরেটরি প্র্যাকটিক্যাল ড্রিল এবং বাংলাদেশ কারিগরি শিক্ষা বোর্ডের (NSDA) নীতিমালা অনুযায়ী বাস্তব কর্মক্ষেত্রের গাইডলাইন।'}
                         </div>
                       )}
                     </div>
@@ -540,7 +593,7 @@ export default function CourseDetails() {
                   {currentLang === 'EN' ? 'Consult for Fees & Scholarships' : 'ফি ও স্কলারশিপ জানতে যোগাযোগ করুন'}
                 </h3>
                 <p className="text-xs font-bold text-slate-400 mt-1">
-                  {currentLang === 'EN' ? 'Special installment facilities available' : 'অফিসে বিশেষ ছাড় ও কিস্তির সুবিধা রয়েছে'}
+                  {currentLang === 'EN' ? 'Special installment facilities available' : 'অফিসে বিশেষ ছাড় ও কিস্তির সুবিধা রয়েছে'}
                 </p>
               </div>
 
@@ -592,7 +645,7 @@ export default function CourseDetails() {
                 {currentLang === 'EN' ? 'Planning to study or work abroad?' : 'বিদেশে উচ্চশিক্ষা বা কর্মসংস্থানের পরিকল্পনা?'}
               </h4>
               <p className="text-xs text-blue-100 mt-1 mb-4 font-medium">
-                {currentLang === 'EN' ? 'We process UK, Japan, Canada & Schengen visas.' : 'ইউকে, জাপান ও কানাডা ভিসা প্রসেসিংয়ে আমরা দিচ্ছি ৯৮% সাফল্যের নিশ্চয়তা।'}
+                {currentLang === 'EN' ? 'We process UK, Japan, Canada & Schengen visas.' : 'ইউকে, জাপান ও কানাডা ভিসা প্রসেসিংয়ে আমরা দিচ্ছি ৯৮% সাফল্যের নিশ্চয়তা।'}
               </p>
               <Link to="/study-abroad">
                 <button className="px-5 py-2 rounded-xl bg-white text-slate-900 hover:bg-amber-300 font-black text-xs transition shadow-sm">

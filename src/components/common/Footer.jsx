@@ -105,7 +105,7 @@ export default function Footer() {
         {/* Bottom Bar: Copyright & Legal (2025 সেট করা হয়েছে) */}
         <div className="mt-10 sm:mt-12 pt-6 border-t border-slate-200/80 flex flex-col md:flex-row items-center justify-between gap-4 text-xs font-bold text-slate-500 text-center md:text-left">
           <div>
-            © 2025 CareerLift (A Skill Development Institute And Medical Solutions). All Rights Reserved.
+            © 2026 CareerLift (A Skill Development Institute And Medical Solutions). All Rights Reserved.
           </div>
           <div className="flex items-center justify-center space-x-4">
             <Link to="#" className="hover:text-blue-600 transition">Privacy Policy</Link>

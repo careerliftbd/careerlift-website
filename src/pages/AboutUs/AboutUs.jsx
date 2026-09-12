@@ -9,6 +9,7 @@ import NeoCard from '../../components/ui/NeoCard';
 import NeoButton from '../../components/ui/NeoButton';
 import SectionTitle from '../../components/ui/SectionTitle';
 import { useLanguage } from '../../context/LanguageContext';
+import { supabase } from '../../config/supabase';
 
 export default function AboutUs() {
   const { lang } = useLanguage();
@@ -34,17 +35,16 @@ export default function AboutUs() {
   const handleFormSubmit = async (e) => {
     e.preventDefault();
     setIsSubmitting(true);
-    const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycby6xxm5ItCCd-z8tlMzYxZMx0xHn7IYdLY_iCOD0KxBi_sbDfDFyf00RQzQE_rj_s9x/exec";
-
     try {
-      await fetch(GOOGLE_SCRIPT_URL, { method: "POST", body: JSON.stringify(formData) });
+      const { error } = await supabase.from('general_inquiries').insert([
+        { name: formData.name, phone: formData.phone, interest: formData.interest }
+      ]);
+      if (error) throw error;
       setSubmitSuccess(true);
-      setFormData({ name: '', phone: '', interest: '🎉 NSDA Free Course (Scholarship / স্কলারশিপ)', source: 'About Us Page' });
-      setTimeout(() => setSubmitSuccess(false), 6000);
+      setFormData({ name: '', phone: '', interest: formData.interest }); // বা পেজ অনুযায়ী ডিফল্ট ভ্যালু
+      setTimeout(() => setSubmitSuccess(false), 5000);
     } catch (error) {
-      console.error("Submission Error:", error);
-      setSubmitSuccess(true);
-      setTimeout(() => setSubmitSuccess(false), 6000);
+      alert("Something went wrong. Please try again.");
     } finally {
       setIsSubmitting(false);
     }
@@ -538,7 +538,7 @@ export default function AboutUs() {
             <div className="lg:col-span-7 bg-slate-50 border border-slate-200/80 rounded-2xl sm:rounded-3xl p-5 sm:p-10 space-y-6 shadow-sm">
               <div>
                 <h3 className="text-lg sm:text-2xl font-black text-slate-900">{currentLang === 'EN' ? 'Book Your Free Consultation' : 'ফ্রি কনসালটেন্সির জন্য রেজিস্ট্রেশন করুন'}</h3>
-                <p className="text-xs sm:text-sm font-medium text-slate-500 mt-1">{currentLang === 'EN' ? 'Fill out this form and our senior counselor will call you within 24 hours to discuss your study, tour, or visit visa profile.' : 'ফর্মটি পূরণ করুন। আমাদের অভিজ্ঞ ভিসা কাউন্সিলর আগামী ২৪ ঘণ্টার মধ্যে ফোনে আপনার সাথে যোগাযোগ করবেন।'}</p>
+                <p className="text-xs sm:text-sm font-medium text-slate-500 mt-1">{currentLang === 'EN' ? 'Fill out this form and our senior counselor will call you within 24 hours to discuss your profile.' : 'ফর্মটি পূরণ করুন। আমাদের অভিজ্ঞ ভিসা কাউন্সিলর আগামী ২৪ ঘণ্টার মধ্যে ফোনে আপনার সাথে যোগাযোগ করবেন।'}</p>
               </div>
 
               {submitSuccess ? (
@@ -568,8 +568,11 @@ export default function AboutUs() {
                         <option value="Study Abroad">🎓 Study Abroad & Student Visa</option>
                         <option value="Care Giving Level-2 & 3">🏥 Care Giving Level-2 & 3 (কেয়ার গিভিং)</option>
                         <option value="IT Skills & Computer Operation">💻 IT Skills & Computer Operation</option>
+                        <option value="Day-long Primary Healthcare">🚑 Day-long Primary Healthcare & CPR Workshop</option>
+                        <option value="Japanese Language Level 2">🇯🇵 Japanese Language Level 2 (SSW Prep)</option>
+                        <option value="Digital Marketing Level 3">💻 Digital Marketing Level 3</option>
                         <option value="Study Tour">✈️ International Study Tour & Summer Camp</option>
-                        <option value="Visit Visa">🧳 Tourist & Visit Visa Consultancy</option>
+                        <option value="Visit Visa">🧳 Tourist / Visit Visa Advisory</option>
                       </select>
                       <div className="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none text-slate-500">
                         <ChevronDown size={18} />
@@ -577,12 +580,24 @@ export default function AboutUs() {
                     </div>
                   </div>
 
-                  <div className="pt-2"><button type="submit" disabled={isSubmitting} className="w-full py-3.5 sm:py-4 rounded-xl bg-slate-900 hover:bg-blue-600 text-white font-black text-xs sm:text-sm transition-all shadow-lg active:scale-98 disabled:opacity-50 flex items-center justify-center space-x-2 group"><span>{isSubmitting ? (currentLang === 'EN' ? 'Processing Request...' : 'প্রসেসিং হচ্ছে...') : (currentLang === 'EN' ? 'Submit For Free Evaluation →' : 'ফ্রি মূল্যায়নের জন্য আবেদন করুন →')}</span></button></div>
-                  <div className="flex items-center justify-center space-x-1.5 text-[10px] font-extrabold text-slate-400 uppercase tracking-widest pt-2"><ShieldCheck size={14} className="text-emerald-500" /><span>{currentLang === 'EN' ? '100% Confidential & Secure Advisory' : '১০০% গোপনীয় ও নিরাপদ তথ্য সংরক্ষণ'}</span></div>
+                  <div className="pt-2">
+                    <button type="submit" disabled={isSubmitting} className="w-full py-3.5 sm:py-4 rounded-xl bg-slate-900 hover:bg-blue-600 text-white font-black text-xs sm:text-sm transition-all shadow-lg active:scale-98 disabled:opacity-50 flex items-center justify-center space-x-2">
+                      <span>{isSubmitting ? (currentLang === 'EN' ? 'Processing Request...' : 'প্রসেসিং হচ্ছে...') : (currentLang === 'EN' ? 'Submit For Free Evaluation →' : 'ফ্রি মূল্যায়নের জন্য আবেদন করুন →')}</span>
+                    </button>
+                  </div>
+                  <div className="flex items-center justify-center space-x-1.5 text-[10px] font-extrabold text-slate-400 uppercase tracking-widest pt-2">
+                    <ShieldCheck size={14} className="text-emerald-500" />
+                    <span>{currentLang === 'EN' ? '100% Confidential & Secure Advisory' : '১০০% গোপনীয় ও নিরাপদ তথ্য সংরক্ষণ'}</span>
+                  </div>
                 </form>
               )}
 
-              <div className="pt-4 border-t border-slate-200/60 flex items-center justify-between text-xs font-bold text-slate-600"><span>💬 Need instant reply?</span><a href="https://wa.me/8801818304081" target="_blank" rel="noopener noreferrer" className="text-emerald-600 hover:underline flex items-center space-x-1"><span>Chat on WhatsApp Now →</span></a></div>
+              <div className="pt-4 border-t border-slate-200/60 flex items-center justify-between text-xs font-bold text-slate-600">
+                <span>💬 {currentLang === 'EN' ? 'Need instant reply?' : 'জরুরি প্রয়োজনে?'}</span>
+                <a href="https://wa.me/8801818304081" target="_blank" rel="noopener noreferrer" className="text-emerald-600 hover:underline flex items-center space-x-1">
+                  <span>{currentLang === 'EN' ? 'Chat on WhatsApp Now →' : 'হোয়াটসঅ্যাপে মেসেজ দিন →'}</span>
+                </a>
+              </div>
             </div>
 
           </div>

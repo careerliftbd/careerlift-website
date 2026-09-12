@@ -7,6 +7,7 @@ import {
 import NeoCard from '../../components/ui/NeoCard';
 import SectionTitle from '../../components/ui/SectionTitle';
 import { useLanguage } from '../../context/LanguageContext';
+import { supabase } from '../../config/supabase';
 
 export default function Courses() {
   const { lang } = useLanguage();
@@ -14,6 +15,7 @@ export default function Courses() {
 
   const [selectedCategory, setSelectedCategory] = useState('All');
   const [searchQuery, setSearchQuery] = useState('');
+  const [dbCourses, setDbCourses] = useState([]); // 👈 নতুন স্টেট
   
   // Quick Lead Capture Form State for Bottom Section
   const [formData, setFormData] = useState({ 
@@ -24,6 +26,27 @@ export default function Courses() {
 
   useEffect(() => {
     window.scrollTo(0, 0);
+    
+    // 👈 ডেটাবেস থেকে ডাইনামিক কোর্স আনার ফাংশন
+    const fetchDynamicCourses = async () => {
+      const { data, error } = await supabase.from('dynamic_courses').select('*');
+      if (data && !error) {
+        // ডেটাবেসের ফরম্যাটকে আপনার হার্ডকোডেড ফরম্যাটের মত বানানো হচ্ছে
+        const formatted = data.map(c => ({
+          id: c.id,
+          category: c.category,
+          rating: c.rating,
+          duration: c.duration,
+          image: c.image,
+          title: { EN: c.title_en, BN: c.title_bn },
+          desc: { EN: c.desc_en, BN: c.desc_bn },
+          tags: c.tags || [],
+          badge: c.badge
+        }));
+        setDbCourses(formatted);
+      }
+    };
+    fetchDynamicCourses();
   }, []);
 
   const handleInputChange = (e) => {
@@ -35,17 +58,16 @@ export default function Courses() {
   const handleFormSubmit = async (e) => {
     e.preventDefault();
     setIsSubmitting(true);
-    const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycby6xxm5ItCCd-z8tlMzYxZMx0xHn7IYdLY_iCOD0KxBi_sbDfDFyf00RQzQE_rj_s9x/exec";
-
     try {
-      await fetch(GOOGLE_SCRIPT_URL, { method: "POST", body: JSON.stringify(formData) });
+      const { error } = await supabase.from('general_inquiries').insert([
+        { name: formData.name, phone: formData.phone, interest: formData.interest }
+      ]);
+      if (error) throw error;
       setSubmitSuccess(true);
-      setFormData({ name: '', phone: '', interest: '🎉 NSDA Free Course (Scholarship / স্কলারশিপ)', source: 'Courses Page' });
-      setTimeout(() => setSubmitSuccess(false), 6000);
+      setFormData({ name: '', phone: '', interest: formData.interest }); 
+      setTimeout(() => setSubmitSuccess(false), 5000);
     } catch (error) {
-      console.error("Submission Error:", error);
-      setSubmitSuccess(true);
-      setTimeout(() => setSubmitSuccess(false), 6000);
+      alert("Something went wrong. Please try again.");
     } finally {
       setIsSubmitting(false);
     }
@@ -123,7 +145,10 @@ export default function Courses() {
 
   const categories = ['All', 'Caregiving', 'Healthcare & Beauty', 'Language Skills', 'IT Skills'];
 
-  const filteredCourses = coursesData.filter((course) => {
+  // 👈 হার্ডকোড এবং ডেটাবেসের কোর্স একসাথে যুক্ত করা হলো
+  const allCourses = [...coursesData, ...dbCourses];
+
+  const filteredCourses = allCourses.filter((course) => {
     const matchesCategory = selectedCategory === 'All' ? true : course.category === selectedCategory;
     const matchesSearch = 
       course.title[currentLang].toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -145,7 +170,7 @@ export default function Courses() {
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center relative z-10 space-y-4 sm:space-y-6">
           <div className="inline-flex items-center space-x-2 text-xs font-black tracking-widest uppercase text-blue-400 bg-white/10 border border-white/15 px-4 py-1.5 rounded-full backdrop-blur-md">
             <GraduationCap size={14} className="text-amber-400" />
-            <span>{currentLang === 'EN' ? 'CareerLift Skill Academy' : 'কারিগরি ও দক্ষতা উন্নয়ন ইন্সটিটিউট'}</span>
+            <span>{currentLang === 'EN' ? 'CareerLift Skill Academy' : 'ক্যারিয়ারলিফট স্কিল ডেভেলপমেন্ট ইনস্টিটিউট'}</span>
           </div>
 
           <h1 className="text-2xl sm:text-5xl lg:text-6xl font-black tracking-tight leading-tight">
@@ -198,7 +223,8 @@ export default function Courses() {
                   : 'bg-white border border-slate-200/80 text-slate-700 hover:bg-slate-50 hover:border-blue-300'
               }`}
             >
-              {cat === 'All' ? (currentLang === 'EN' ? `All Courses (${coursesData.length})` : `সকল কোর্স (${coursesData.length})`) : cat}
+              {/* 👈 coursesData.length এর জায়গায় allCourses.length দেওয়া হয়েছে */}
+              {cat === 'All' ? (currentLang === 'EN' ? `All Courses (${allCourses.length})` : `সকল কোর্স (${allCourses.length})`) : cat}
             </button>
           ))}
         </div>
@@ -312,7 +338,7 @@ export default function Courses() {
               </div>
 
               <h2 className="text-2xl sm:text-4xl font-black text-slate-900 leading-tight">
-                {currentLang === 'EN' ? 'Confused About Choosing The Right Pathway?' : 'কোন কোর্সটি আপনার জন্য সেরা তা নিয়ে কনফিউজড?'}
+                {currentLang === 'EN' ? 'Confused About Choosing The Right Pathway?' : 'কোন কোর্সটি আপনার জন্য সেরা তা নিয়ে কনফিউজড?'}
               </h2>
 
               <p className="text-xs sm:text-base text-slate-600 font-medium leading-relaxed">
@@ -328,54 +354,75 @@ export default function Courses() {
                 </div>
                 <div className="flex items-center space-x-2.5 text-xs sm:text-sm font-bold text-slate-700">
                   <CheckCircle2 size={16} className="text-emerald-600 flex-shrink-0" />
-                  <span>{currentLang === 'EN' ? 'Direct consultation for Japan SSW & UK caregiver visas' : 'জাপান SSW এবং ইউকে কেয়ারগিভার ভিসার সরাসরি পরামর্শ'}</span>
+                  <span>{currentLang === 'EN' ? 'Direct consultation for Japan SSW & UK caregiver visas' : 'জাপান SSW এবং ইউকে কেয়ারগিভার ভিসার সরাসরি পরামর্শ'}</span>
                 </div>
               </div>
             </div>
 
             <div className="lg:col-span-6">
-              <div className="bg-slate-50 border border-slate-200/80 rounded-2xl sm:rounded-3xl p-5 sm:p-10 shadow-sm">
-                <div className="mb-6">
+              <div className="bg-slate-50 border border-slate-200/80 rounded-2xl sm:rounded-3xl p-5 sm:p-10 space-y-6 shadow-sm">
+                <div>
                   <h3 className="text-lg sm:text-2xl font-black text-slate-900">{currentLang === 'EN' ? 'Request Course Counseling' : 'ফ্রি পরামর্শের জন্য আবেদন করুন'}</h3>
-                  <p className="text-xs font-medium text-slate-500 mt-1">Fill out the form and our admission officer will call you back.</p>
+                  <p className="text-xs sm:text-sm font-medium text-slate-500 mt-1">{currentLang === 'EN' ? 'Fill out this form and our admission officer will call you back.' : 'ফর্মটি পূরণ করুন। আমাদের অ্যাডমিশন অফিসার আগামী ২৪ ঘণ্টার মধ্যে যোগাযোগ করবেন।'}</p>
                 </div>
 
                 {submitSuccess ? (
-                  <div className="p-8 rounded-2xl bg-emerald-100 border border-emerald-200 text-center space-y-2">
-                    <CheckCircle2 size={40} className="text-emerald-600 mx-auto" />
-                    <h4 className="text-lg font-black text-emerald-800">Request Received!</h4>
-                    <p className="text-xs font-medium text-emerald-700">We will contact you within 24 hours.</p>
+                  <div className="p-8 rounded-2xl bg-emerald-100 border border-emerald-200 text-center space-y-3">
+                    <CheckCircle2 size={48} className="text-emerald-600 mx-auto animate-bounce" />
+                    <h4 className="text-xl font-black text-emerald-900">{currentLang === 'EN' ? 'Request Received!' : 'আবেদন সফলভাবে গৃহীত হয়েছে!'}</h4>
+                    <p className="text-xs sm:text-sm font-medium text-emerald-800">{currentLang === 'EN' ? 'We have received your details. Our team will contact you soon.' : 'আমরা আপনার তথ্য পেয়েছি। আমাদের টিম শীঘ্রই আপনার সাথে যোগাযোগ করবে।'}</p>
                   </div>
                 ) : (
                   <form onSubmit={handleFormSubmit} className="space-y-3.5 sm:space-y-4">
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
-                      <input type="text" name="name" required value={formData.name} onChange={handleInputChange} placeholder="Full Name" className="w-full px-4 py-3 sm:py-3.5 rounded-xl bg-white border border-slate-200 text-xs sm:text-sm font-medium focus:outline-none focus:ring-2 focus:ring-blue-500" />
-                      <input type="tel" name="phone" required value={formData.phone} onChange={handleInputChange} placeholder="Phone Number" className="w-full px-4 py-3 sm:py-3.5 rounded-xl bg-white border border-slate-200 text-xs sm:text-sm font-medium focus:outline-none focus:ring-2 focus:ring-blue-500" />
-                    </div>
-                    
-                    <div className="relative w-full">
-                      <select name="interest" value={formData.interest} onChange={handleInputChange} className="w-full pl-3.5 pr-10 py-3 sm:py-3.5 rounded-xl bg-white border border-slate-200 text-xs sm:text-sm font-bold text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500 cursor-pointer appearance-none truncate block shadow-2xs">
-                        <option value="NSDA Free Course">🎉 NSDA Free Course (Scholarship / স্কলারশিপ)</option>
-                        <option value="Care Giving Level-2 & 3">🏥 Care Giving Level-2 & 3 (কেয়ার গিভিং)</option>
-                        <option value="IT Skills & Computer Operation">💻 IT Skills & Computer Operation</option>
-                        <option value="Day-long Primary Healthcare">🚑 Day-long Primary Healthcare & CPR Workshop</option>
-                        <option value="Japanese Language Level 2">🇯🇵 Japanese Language Level 2 (SSW Prep)</option>
-                        <option value="Digital Marketing Level 3">💻 Digital Marketing Level 3</option>
-                      </select>
-                      <div className="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none text-slate-500">
-                        <ChevronDown size={18} />
+                      <div className="space-y-1 sm:space-y-1.5">
+                        <label className="text-xs font-bold text-slate-700 block">{currentLang === 'EN' ? 'Your Full Name *' : 'আপনার সম্পূর্ণ নাম *'}</label>
+                        <input type="text" name="name" required value={formData.name} onChange={handleInputChange} placeholder="e.g. Md. Shakawat Hossain" className="w-full px-4 py-3 sm:py-3.5 rounded-xl bg-white border border-slate-200 text-xs sm:text-sm font-semibold text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-600 shadow-2xs" />
+                      </div>
+                      <div className="space-y-1 sm:space-y-1.5">
+                        <label className="text-xs font-bold text-slate-700 block">{currentLang === 'EN' ? 'WhatsApp / Phone Number *' : 'মোবাইল বা হোয়াটসঅ্যাপ নম্বর *'}</label>
+                        <input type="tel" name="phone" required value={formData.phone} onChange={handleInputChange} placeholder="018XXXXXXXX" className="w-full px-4 py-3 sm:py-3.5 rounded-xl bg-white border border-slate-200 text-xs sm:text-sm font-semibold text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-600 shadow-2xs" />
                       </div>
                     </div>
 
-                    <button type="submit" disabled={isSubmitting} className="w-full py-3.5 sm:py-4 rounded-xl bg-slate-900 text-white font-bold text-xs sm:text-sm hover:bg-blue-600 active:scale-98 transition-colors disabled:opacity-50">
-                      {isSubmitting ? 'Processing...' : (currentLang === 'EN' ? 'Submit Counseling Request →' : 'আবেদন জমা দিন →')}
-                    </button>
-                    <div className="flex items-center justify-center space-x-1.5 text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-3">
+                    <div className="space-y-1 sm:space-y-1.5">
+                      <label className="text-xs font-bold text-slate-700 block">{currentLang === 'EN' ? 'Required Service or Course *' : 'কাঙ্ক্ষিত সেবা বা কোর্স *'}</label>
+                      <div className="relative w-full">
+                        <select name="interest" value={formData.interest} onChange={handleInputChange} className="w-full pl-3.5 pr-10 py-3 sm:py-3.5 rounded-xl bg-white border border-slate-200 text-xs sm:text-sm font-bold text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-600 cursor-pointer appearance-none truncate block shadow-2xs">
+                          <option value="NSDA Free Course">🎉 NSDA Free Course (Scholarship / স্কলারশিপ)</option>
+                          <option value="Study Abroad">🎓 Study Abroad & Student Visa</option>
+                          <option value="Care Giving Level-2 & 3">🏥 Care Giving Level-2 & 3 (কেয়ার গিভিং)</option>
+                          <option value="IT Skills & Computer Operation">💻 IT Skills & Computer Operation</option>
+                          <option value="Day-long Primary Healthcare">🚑 Day-long Primary Healthcare & CPR Workshop</option>
+                          <option value="Japanese Language Level 2">🇯🇵 Japanese Language Level 2 (SSW Prep)</option>
+                          <option value="Digital Marketing Level 3">💻 Digital Marketing Level 3</option>
+                          <option value="Study Tour">✈️ International Study Tour & Summer Camp</option>
+                          <option value="Visit Visa">🧳 Tourist / Visit Visa Advisory</option>
+                        </select>
+                        <div className="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none text-slate-500">
+                          <ChevronDown size={18} />
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="pt-2">
+                      <button type="submit" disabled={isSubmitting} className="w-full py-3.5 sm:py-4 rounded-xl bg-slate-900 hover:bg-blue-600 text-white font-black text-xs sm:text-sm transition-all shadow-lg active:scale-98 disabled:opacity-50 flex items-center justify-center space-x-2">
+                        <span>{isSubmitting ? (currentLang === 'EN' ? 'Processing Request...' : 'প্রসেসিং হচ্ছে...') : (currentLang === 'EN' ? 'Submit Counseling Request →' : 'ফ্রি মূল্যায়নের জন্য আবেদন করুন →')}</span>
+                      </button>
+                    </div>
+                    <div className="flex items-center justify-center space-x-1.5 text-[10px] font-extrabold text-slate-400 uppercase tracking-widest pt-2">
                       <ShieldCheck size={14} className="text-emerald-500" />
-                      <span>Secure & Confidential</span>
+                      <span>{currentLang === 'EN' ? '100% Confidential & Secure Advisory' : '১০০% গোপনীয় ও নিরাপদ তথ্য সংরক্ষণ'}</span>
                     </div>
                   </form>
                 )}
+
+                <div className="pt-4 border-t border-slate-200/60 flex items-center justify-between text-xs font-bold text-slate-600">
+                  <span>💬 {currentLang === 'EN' ? 'Need instant reply?' : 'জরুরি প্রয়োজনে?'}</span>
+                  <a href="https://wa.me/8801818304081" target="_blank" rel="noopener noreferrer" className="text-emerald-600 hover:underline flex items-center space-x-1">
+                    <span>{currentLang === 'EN' ? 'Chat on WhatsApp Now →' : 'হোয়াটসঅ্যাপে মেসেজ দিন →'}</span>
+                  </a>
+                </div>
               </div>
             </div>
 

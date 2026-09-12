@@ -1,240 +1,201 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
-import { 
-  Globe, GraduationCap, Stethoscope, ArrowRight, 
-  Sparkles, Play, CheckCircle2, ShieldCheck, Star, 
-  Flame, Tag, Clock, PlaneTakeoff, Zap, Award
-} from 'lucide-react';
+import { Sparkles, Play, CheckCircle2, Star, Users } from 'lucide-react';
 import { useLanguage } from '../../context/LanguageContext';
 import NeoButton from '../../components/ui/NeoButton';
+
+// 🎯 কাস্টম টাইপিং এফেক্ট কম্পোনেন্ট
+function TypeWriter({ textArray }) {
+  const [displayText, setDisplayText] = useState('');
+  const [index, setIndex] = useState(0);
+  const [isDeleting, setIsDeleting] = useState(false);
+
+  useEffect(() => {
+    let timer;
+    const currentText = textArray[index];
+
+    if (isDeleting) {
+      timer = setTimeout(() => {
+        setDisplayText(currentText.substring(0, displayText.length - 1));
+        if (displayText.length === 0) {
+          setIsDeleting(false);
+          setIndex((prev) => (prev + 1) % textArray.length);
+        }
+      }, 50);
+    } else {
+      timer = setTimeout(() => {
+        setDisplayText(currentText.substring(0, displayText.length + 1));
+        if (displayText.length === currentText.length) {
+          setTimeout(() => setIsDeleting(true), 2500);
+        }
+      }, 80);
+    }
+    return () => clearTimeout(timer);
+  }, [displayText, isDeleting, index, textArray]);
+
+  return (
+    <span className="border-r-[3px] border-emerald-400 pr-1 animate-pulse">
+      {displayText}
+    </span>
+  );
+}
 
 export default function HeroSection() {
   const { lang } = useLanguage();
   const currentLang = lang || 'EN';
   const [showVideoModal, setShowVideoModal] = useState(false);
 
-  // 👇 React Router-এর নেভিগেশন হুক
   const navigate = useNavigate();
   const location = useLocation();
 
-  // 👇 বুক ফ্রি অ্যাসেসমেন্ট বাটনের জন্য বুলেটপ্রুফ স্ক্রল লজিক
   const handleScrollToForm = (e) => {
     e.preventDefault();
-    
-    // ১. যদি ইউজার আগে থেকেই হোমপেজে থাকে
     if (location.pathname === '/') {
-      const formElement = document.getElementById('consultation-form');
-      if (formElement) {
-        formElement.scrollIntoView({ behavior: 'smooth', block: 'start' });
-      } else {
-        console.warn("ID 'consultation-form' খুঁজে পাওয়া যায়নি!");
-      }
+      document.getElementById('consultation-form')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
     } else {
-      // ২. যদি ইউজার অন্য কোনো পেজে থাকে, তবে হোমপেজের রাউটে পাঠিয়ে স্ক্রল করা হবে
       navigate('/');
-      setTimeout(() => {
-        const formElement = document.getElementById('consultation-form');
-        if (formElement) {
-          formElement.scrollIntoView({ behavior: 'smooth', block: 'start' });
-        }
-      }, 300); // পেজ রেন্ডার হওয়ার জন্য ৩০০ms সময় দেওয়া হয়েছে
+      setTimeout(() => document.getElementById('consultation-form')?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 300);
     }
   };
 
-  const liveOpportunities = [
-    {
-      id: "5",
-      domain: "FREE COURSE",
-      icon: <GraduationCap className="w-4 h-4 sm:w-5 sm:h-5 text-emerald-400 animate-pulse" />,
-      title: { EN: "Primary Healthcare Service Level-2", BN: "প্রাইমারি হেলথকেয়ার সার্ভিস লেভেল-২" },
-      badge: { EN: "100% Govt. Scholarship", BN: "১০০% ফ্রি সরকারি স্কলারশিপ" },
-      deadline: "Admission Open",
-      link: "/course/5",
-      accent: "from-emerald-500/20 via-teal-500/10 to-transparent border-emerald-500/40 hover:border-emerald-400",
-      tagColor: "bg-emerald-500 text-slate-950 font-black"
-    },
-    {
-      id: "uk-othm",
-      domain: "STUDY ABROAD",
-      icon: <PlaneTakeoff className="w-4 h-4 sm:w-5 sm:h-5 text-blue-400 animate-bounce" />,
-      title: { EN: "UK Direct 3rd Year Entry via OTHM Diploma", BN: "OTHM ডিপ্লোমার মাধ্যমে ইউকেতে ৩য় বর্ষে সরাসরি ভর্তি" },
-      badge: { EN: "Save 50% Tuition + 2 Yrs PSW", BN: "৫০% খরচ সাশ্রয় ও ২ বছরের ওয়ার্ক ভিসা" },
-      deadline: "Sep / Jan Intake",
-      link: "/study-abroad#packages",
-      accent: "from-blue-500/20 via-indigo-500/10 to-transparent border-blue-500/40 hover:border-blue-400",
-      tagColor: "bg-blue-500 text-white font-black"
-    },
-    {
-      id: "10",
-      domain: "SKILL TRAINING",
-      icon: <Stethoscope className="w-4 h-4 sm:w-5 sm:h-5 text-amber-400" />,
-      title: { EN: "Day-long Primary Healthcare & First Aid Drill", BN: "দিনব্যাপী প্রাইমারি হেলথ কেয়ার ও ফার্স্ট এইড প্র্যাক্টিক্যাল" },
-      badge: { EN: "Clinical Certificate Included", BN: "হ্যান্ডস-অন ল্যাব ও সার্টিফিকেট প্রদান" },
-      deadline: "Every Friday",
-      link: "/course/10",
-      accent: "from-amber-500/20 via-orange-500/10 to-transparent border-amber-500/40 hover:border-amber-400",
-      tagColor: "bg-amber-400 text-slate-950 font-black"
-    },
-    {
-      id: "schengen-pack",
-      domain: "EUROPE VISA",
-      icon: <Globe className="w-4 h-4 sm:w-5 sm:h-5 text-purple-400" />,
-      title: { EN: "Schengen 29 Countries Study & Job Search Track", BN: "শেনজেন জোনের ২৯টি দেশে স্টাডি ও জব সার্চ সুবিধা" },
-      badge: { EN: "Free Tuition in Germany & Finland", BN: "জার্মানি ও ফিনল্যান্ডে ফ্রি পড়াশোনা" },
-      deadline: "Winter Intake",
-      link: "/study-abroad#packages",
-      accent: "from-purple-500/20 via-pink-500/10 to-transparent border-purple-500/40 hover:border-purple-400",
-      tagColor: "bg-purple-500 text-white font-black"
-    }
+  // 🖼️ অটোমেটিক ইমেজ স্লাইডার 
+  const images = [
+    '/hero img/image 1.jpg',
+    '/hero img/image 2.jpg',
+    '/hero img/image 3.jpg',
+    '/hero img/image 4.jpg'
   ];
+  const [currentImg, setCurrentImg] = useState(0);
+
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setCurrentImg((prev) => (prev + 1) % images.length);
+    }, 4000);
+    return () => clearInterval(timer);
+  }, [images.length]);
+
+  const typingTexts = {
+    EN: ["Global Study & Careers.", "NSDA Certified Skills."],
+    BN: ["স্টাডি অ্যাব্রোড ও গ্লোবাল ক্যারিয়ারে।", "NSDA অনুমোদিত কারিগরি দক্ষতায়।"]
+  };
 
   return (
-    <section className="bg-slate-900 text-white pt-10 sm:pt-16 pb-16 sm:pb-24 relative overflow-hidden">
-      <div className="absolute top-1/4 left-10 w-80 sm:w-96 h-80 sm:h-96 bg-blue-600/15 rounded-full blur-3xl pointer-events-none"></div>
-      <div className="absolute bottom-10 right-10 w-80 sm:w-96 h-80 sm:h-96 bg-emerald-600/15 rounded-full blur-3xl pointer-events-none"></div>
+    <section className="bg-slate-900 text-white pt-12 pb-20 sm:pt-20 sm:pb-28 relative overflow-hidden">
+      <div className="absolute top-1/4 left-10 w-96 h-96 bg-blue-600/10 rounded-full blur-3xl pointer-events-none"></div>
+      <div className="absolute bottom-10 right-10 w-96 h-96 bg-emerald-600/10 rounded-full blur-3xl pointer-events-none"></div>
       
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 sm:gap-12 items-center">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 lg:gap-8 items-center">
           
-          {/* Left Text & CTA Column */}
-          <div className="lg:col-span-6 space-y-5 sm:space-y-6 text-center lg:text-left">
-            <div className="inline-flex items-center space-x-2 text-[10px] sm:text-xs font-black tracking-widest uppercase text-blue-400 bg-white/10 border border-white/15 px-3.5 sm:px-4 py-1.5 rounded-full backdrop-blur-md">
-              <Sparkles size={14} className="text-amber-400 animate-spin-slow flex-shrink-0" />
-              <span className="truncate">{currentLang === 'EN' ? 'Global Education & Skill Development' : 'আন্তর্জাতিক শিক্ষা, ভিসা ও স্কিল সলিউশন'}</span>
+          {/* ================= বাম পাশ ================= */}
+          <div className="lg:col-span-7 space-y-5 text-center lg:text-left">
+            
+            <div className="inline-flex items-center space-x-2 text-xs font-black tracking-widest uppercase text-blue-400 bg-blue-500/10 border border-blue-500/20 px-4 py-1.5 rounded-full backdrop-blur-md">
+              <Sparkles size={14} className="text-amber-400 animate-spin-slow" />
+              <span>{currentLang === 'EN' ? 'Global Education & NSDA Certified Skills' : 'আন্তর্জাতিক শিক্ষা ও সরকারি স্বীকৃত স্কিল ডেভেলপমেন্ট'}</span>
             </div>
 
-            <h1 className="text-2xl sm:text-5xl lg:text-6xl font-black tracking-tight leading-[1.15]">
-              {currentLang === 'EN' ? 'Transforming Your ' : 'দক্ষতা অর্জনে ও উচ্চশিক্ষায় '} 
-              <span className="bg-gradient-to-r from-blue-400 via-indigo-300 to-emerald-400 bg-clip-text text-transparent">
-                {currentLang === 'EN' ? 'Global Ambitions ' : 'বিশ্বজুড়ে আপনার '}
+            <h1 className="text-3xl sm:text-5xl lg:text-6xl font-black tracking-tight leading-[1.2]">
+              {currentLang === 'EN' ? 'Your Trusted Partner For ' : 'আপনার নির্ভরযোগ্য মাধ্যম: '} <br className="hidden lg:block"/>
+              
+              <span className="relative inline-block mt-2 w-full text-center lg:text-left">
+                <span className="invisible block pointer-events-none opacity-0">
+                  {currentLang === 'EN' ? "Global Study & Careers." : "স্টাডি অ্যাব্রোড ও গ্লোবাল ক্যারিয়ারে।"}
+                </span>
+                
+                <span className="absolute top-0 left-0 w-full h-full bg-gradient-to-r from-blue-400 via-indigo-300 to-emerald-400 bg-clip-text text-transparent flex items-center justify-center lg:justify-start">
+                  <TypeWriter textArray={typingTexts[currentLang]} />
+                </span>
               </span>
-              {currentLang === 'EN' ? 'Into Reality.' : 'নির্ভরযোগ্য মাধ্যম।'}
             </h1>
 
-            <p className="text-xs sm:text-lg text-slate-300 font-medium leading-relaxed max-w-2xl mx-auto lg:mx-0">
+            <p className="text-sm sm:text-lg text-slate-300 font-medium leading-relaxed max-w-2xl mx-auto lg:mx-0">
               {currentLang === 'EN'
-                ? 'CareerLift combines Bangladesh Government recognition (NSDA), UK British qualifications (OTHM/Qualifi), and clinical healthcare expertise to build sustainable global careers.'
-                : 'গণপ্রজাতন্ত্রী বাংলাদেশ সরকারের (NSDA) স্বীকৃতি, ব্রিটিশ ডিপ্লোমা (OTHM/Qualifi) এবং বিশেষায়িত হেলথকেয়ার দক্ষতার সমন্বয়ে আন্তর্জাতিক ক্যারিয়ার গঠনে কাজ করছে ক্যারিয়ারলিফ্ট।'}
+                ? 'Empowering students and professionals with UK pathways, European study opportunities, and Prime Minister’s Office authorized NSDA skill training.'
+                : 'যুক্তরাজ্য ও ইউরোপের শীর্ষ ইউনিভার্সিটিতে স্টাডি ভিসা এবং বাংলাদেশ সরকারের NSDA অনুমোদিত ল্যাব-ভিত্তিক ব্যবহারিক প্রশিক্ষণের নির্ভরযোগ্য প্ল্যাটফর্ম।'}
             </p>
 
-            <div className="pt-2 sm:pt-4 flex flex-wrap items-center justify-center lg:justify-start gap-3 sm:gap-4">
-              <Link to="/study-abroad" className="w-full sm:w-auto">
-                <NeoButton variant="primary" className="w-full sm:w-auto !px-8 !py-4 text-xs sm:text-sm font-bold shadow-lg shadow-blue-500/20">
-                  {currentLang === 'EN' ? 'Explore Study Abroad →' : 'স্টাডি অ্যাব্রোড এক্সপ্লোর করুন →'}
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 pt-2 max-w-lg mx-auto lg:mx-0 text-left">
+              <div className="flex items-center space-x-2 bg-white/5 border border-white/10 px-3.5 py-2.5 rounded-xl">
+                <CheckCircle2 size={16} className="text-emerald-400 shrink-0" />
+                <span className="text-xs font-bold text-slate-200">{currentLang === 'EN' ? '98% Visa Success' : '৯৮% ভিসা সাফল্য'}</span>
+              </div>
+              <div className="flex items-center space-x-2 bg-white/5 border border-white/10 px-3.5 py-2.5 rounded-xl">
+                <CheckCircle2 size={16} className="text-blue-400 shrink-0" />
+                <span className="text-xs font-bold text-slate-200">{currentLang === 'EN' ? 'Govt. NSDA Approved' : 'NSDA অনুমোদিত'}</span>
+              </div>
+              <div className="col-span-2 sm:col-span-1 flex items-center space-x-2 bg-white/5 border border-white/10 px-3.5 py-2.5 rounded-xl justify-center sm:justify-start">
+                <CheckCircle2 size={16} className="text-amber-400 shrink-0" />
+                <span className="text-xs font-bold text-slate-200">{currentLang === 'EN' ? '0% Hidden Cost' : 'স্বচ্ছ প্রক্রিয়া'}</span>
+              </div>
+            </div>
+
+            <div className="pt-4 flex flex-wrap items-center justify-center lg:justify-start gap-4">
+              {/* 👇 এখানে ডাবল বাটন এররটি ফিক্স করা হয়েছে */}
+              <div onClick={handleScrollToForm} className="cursor-pointer inline-block">
+                <NeoButton variant="primary" className="!px-6 sm:!px-8 !py-3.5 sm:!py-4 text-xs sm:text-sm font-bold shadow-lg shadow-blue-500/20 pointer-events-none">
+                  {currentLang === 'EN' ? 'Book Assessment →' : 'ফ্রি অ্যাসেসমেন্ট বুক করুন →'}
                 </NeoButton>
-              </Link>
+              </div>
               
               <button 
                 onClick={() => setShowVideoModal(true)}
-                className="w-full sm:w-auto inline-flex items-center justify-center space-x-3 px-6 py-3.5 sm:py-4 rounded-2xl bg-white/10 hover:bg-white/20 text-white font-bold text-xs sm:text-sm transition-all border border-white/15 cursor-pointer group"
+                className="inline-flex items-center space-x-2 px-5 py-3.5 sm:py-4 rounded-xl bg-white/10 hover:bg-white/20 text-white font-bold text-xs sm:text-sm transition-all border border-white/15 cursor-pointer group"
               >
-                <div className="w-6 h-6 sm:w-7 sm:h-7 rounded-full bg-red-600 flex items-center justify-center shadow-md group-hover:scale-110 transition-transform">
-                  <Play size={13} className="fill-white ml-0.5" />
+                <div className="w-6 h-6 rounded-full bg-red-600 flex items-center justify-center shadow-md group-hover:scale-110 transition-transform">
+                  <Play size={12} className="fill-white ml-0.5" />
                 </div>
-                <span>{currentLang === 'EN' ? 'Watch Campus Tour' : 'ক্যাম্পাস ভিডিও দেখুন'}</span>
+                <span>{currentLang === 'EN' ? 'Watch Video' : 'ভিডিও দেখুন'}</span>
               </button>
             </div>
           </div>
 
-          {/* Right Notice Board & Live Opportunities Column */}
-          <div className="lg:col-span-6 relative">
-            <div className="bg-slate-950/80 border-2 border-white/15 rounded-[1.75rem] sm:rounded-[2.5rem] p-4 sm:p-7 shadow-2xl backdrop-blur-2xl relative overflow-hidden space-y-3 sm:space-y-4">
+          {/* ================= ডান পাশ ================= */}
+          <div className="lg:col-span-5 relative">
+            <div className="aspect-[4/3] sm:aspect-square rounded-[2.5rem] overflow-hidden border-2 border-white/15 shadow-2xl relative bg-slate-800">
               
-              <div className="flex items-center justify-between pb-3 border-b border-white/10">
-                <div className="flex items-center space-x-2 sm:space-x-2.5">
-                  <div className="relative flex items-center justify-center">
-                    <span className="w-2.5 h-2.5 sm:w-3 sm:h-3 rounded-full bg-red-500 animate-ping absolute"></span>
-                    <span className="w-2 h-2 sm:w-2.5 sm:h-2.5 rounded-full bg-red-500 relative z-10"></span>
+              {images.map((img, idx) => (
+                <img 
+                  key={idx}
+                  src={img} 
+                  alt={`CareerLift ${idx + 1}`} 
+                  className={`absolute inset-0 w-full h-full object-cover transition-opacity duration-1000 ${
+                    idx === currentImg ? 'opacity-100' : 'opacity-0'
+                  }`}
+                />
+              ))}
+
+              <div className="absolute inset-0 bg-gradient-to-t from-slate-950/80 via-transparent to-transparent"></div>
+              
+              <div className="absolute bottom-4 left-4 right-4 bg-slate-900/80 backdrop-blur-md border border-white/10 p-4 rounded-2xl flex items-center justify-between z-20">
+                <div className="flex items-center space-x-3">
+                  <div className="w-10 h-10 rounded-xl bg-emerald-500/20 text-emerald-400 flex items-center justify-center font-bold">
+                    <Users size={20} />
                   </div>
-                  <span className="text-[11px] sm:text-sm font-black uppercase tracking-wider text-white flex items-center">
-                    <Flame size={15} className="mr-1 sm:mr-1.5 text-amber-400 fill-amber-400 animate-bounce flex-shrink-0" /> 
-                    {currentLang === 'EN' ? 'Live Opportunities & Offers' : 'এক নজরে আমাদের চলমান অফার গুলো;'}
-                  </span>
+                  <div>
+                    <h4 className="text-xs font-black text-white">500+ Students</h4>
+                    <p className="text-[10px] text-slate-400">Successfully Guided & Trained</p>
+                  </div>
                 </div>
-                <span className="text-[9px] sm:text-[10px] font-extrabold uppercase bg-white/10 text-slate-300 border border-white/15 px-2.5 sm:px-3 py-1 rounded-full flex items-center gap-1 flex-shrink-0">
-                  <Zap size={11} className="text-amber-400 fill-amber-400" /> Real-Time
-                </span>
+                <div className="flex space-x-0.5">
+                  {[1,2,3,4,5].map(s => <Star key={s} size={12} className="fill-amber-400 text-amber-400" />)}
+                </div>
               </div>
-
-              <div className="space-y-2 sm:space-y-3 pt-1">
-                {liveOpportunities.map((item, idx) => (
-                  <Link 
-                    key={idx}
-                    to={item.link}
-                    className={`block p-3 sm:p-4 rounded-2xl bg-gradient-to-r ${item.accent} border transition-all duration-300 hover:scale-[1.01] hover:shadow-lg group/item relative overflow-hidden`}
-                  >
-                    <div className="flex items-start justify-between gap-2.5 sm:gap-3">
-                      <div className="space-y-1 sm:space-y-1.5 flex-grow min-w-0">
-                        <div className="flex flex-wrap items-center gap-1.5 sm:gap-2">
-                          <span className={`text-[8px] sm:text-[9px] uppercase px-1.5 sm:px-2 py-0.5 rounded-md shadow-2xs flex items-center gap-1 ${item.tagColor}`}>
-                            {item.icon}
-                            <span>{item.domain}</span>
-                          </span>
-                          <span className="text-[9px] sm:text-[10px] font-extrabold text-slate-400 flex items-center bg-black/40 px-1.5 sm:px-2 py-0.5 rounded">
-                            <Clock size={10} className="mr-1 text-blue-400 flex-shrink-0" /> {item.deadline}
-                          </span>
-                        </div>
-
-                        <h4 className="text-xs sm:text-sm font-black text-white group-hover/item:text-blue-300 transition-colors line-clamp-1 leading-snug">
-                          {item.title[currentLang]}
-                        </h4>
-
-                        <div className="flex items-center text-[10px] sm:text-[11px] font-extrabold text-amber-300">
-                          <Award size={13} className="mr-1 text-amber-400 flex-shrink-0" />
-                          <span className="truncate">{item.badge[currentLang]}</span>
-                        </div>
-                      </div>
-
-                      <div className="w-7 h-7 sm:w-9 sm:h-9 rounded-xl bg-white/10 group-hover/item:bg-white group-hover/item:text-slate-950 text-white flex items-center justify-center flex-shrink-0 transition-all shadow-md self-center">
-                        <ArrowRight size={15} className="group-hover/item:translate-x-0.5 transition-transform" />
-                      </div>
-                    </div>
-                  </Link>
-                ))}
-              </div>
-
-              <div className="pt-2 border-t border-white/10 flex flex-col sm:flex-row items-center justify-between gap-1 sm:gap-0 text-xs font-bold text-slate-400 text-center sm:text-left">
-                <span>🎯 {currentLang === 'EN' ? 'Want customized guidance?' : 'সঠিক গাইডলাইন প্রয়োজন?'}</span>
-                
-                {/* 👇 এখানে বাটন ট্যাগ এবং handleScrollToForm ফাংশন ব্যবহার করা হয়েছে */}
-                <button 
-                  onClick={handleScrollToForm}
-                  className="text-xs font-black text-emerald-400 hover:text-emerald-300 underline flex items-center space-x-1 cursor-pointer bg-transparent border-none p-0"
-                >
-                  <span>{currentLang === 'EN' ? 'Book Free Assessment →' : 'ফ্রি অ্যাসেসমেন্ট বুক করুন →'}</span>
-                </button>
-              </div>
-
             </div>
           </div>
 
         </div>
       </div>
 
-      {/* Video Modal with Enhanced HTML5 Attributes */}
       {showVideoModal && (
-        <div className="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-md flex items-center justify-center p-4 animate-in fade-in duration-200">
+        <div className="fixed inset-0 z-[100] bg-slate-950/80 backdrop-blur-md flex items-center justify-center p-4 animate-in fade-in duration-200">
           <div className="bg-slate-900 border border-slate-800 rounded-3xl max-w-4xl w-full overflow-hidden shadow-2xl relative">
-            <div className="p-3.5 sm:p-4 bg-slate-800 flex justify-between items-center text-white font-bold text-xs sm:text-sm px-4 sm:px-6">
-              <span>{currentLang === 'EN' ? 'CareerLift Institutional Overview' : 'ক্যারিয়ারলিফ্ট প্রাতিষ্ঠানিক পরিচিতি'}</span>
-              <button 
-                onClick={() => setShowVideoModal(false)} 
-                className="w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-slate-700 hover:bg-red-600 flex items-center justify-center text-white transition cursor-pointer"
-              >
-                ✕
-              </button>
+            <div className="p-4 bg-slate-800 flex justify-between items-center text-white font-bold text-sm px-6">
+              <span>{currentLang === 'EN' ? 'CareerLift Overview' : 'ক্যারিয়ারলিফ্ট পরিচিতি'}</span>
+              <button onClick={() => setShowVideoModal(false)} className="w-8 h-8 rounded-full bg-slate-700 hover:bg-red-600 text-white transition-colors">✕</button>
             </div>
             <div className="aspect-video bg-black flex items-center justify-center">
-              <video 
-                src="/CareerLift__Global_Career.mp4" 
-                controls 
-                autoPlay 
-                playsInline
-                preload="auto"
-                className="w-full h-full object-contain"
-              >
-                Your browser does not support the video tag.
-              </video>
+              <video src="/CareerLift__Global_Career.mp4" controls autoPlay playsInline className="w-full h-full"></video>
             </div>
           </div>
         </div>

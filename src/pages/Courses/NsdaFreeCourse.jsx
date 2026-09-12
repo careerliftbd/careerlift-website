@@ -6,6 +6,8 @@ import {
   FileCheck, Globe, Zap, HeartHandshake, Phone, MapPin, ChevronDown
 } from 'lucide-react';
 import NeoButton from '../../components/ui/NeoButton';
+import { supabase } from '../../config/supabase';
+
 
 export default function NsdaFreeCourse() {
   useEffect(() => {
@@ -28,17 +30,16 @@ export default function NsdaFreeCourse() {
   const handleFormSubmit = async (e) => {
     e.preventDefault();
     setIsSubmitting(true);
-    const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycby6xxm5ItCCd-z8tlMzYxZMx0xHn7IYdLY_iCOD0KxBi_sbDfDFyf00RQzQE_rj_s9x/exec";
-
     try {
-      await fetch(GOOGLE_SCRIPT_URL, { method: "POST", body: JSON.stringify(formData) });
+      const { error } = await supabase.from('general_inquiries').insert([
+        { name: formData.name, phone: formData.phone, interest: formData.interest }
+      ]);
+      if (error) throw error;
       setSubmitSuccess(true);
-      setFormData({ name: '', phone: '', interest: '🎉 NSDA Free Course (Scholarship / স্কলারশিপ)', source: 'NSDA Free Course Page' });
-      setTimeout(() => setSubmitSuccess(false), 6000);
+      setFormData({ name: '', phone: '', interest: formData.interest }); // বা পেজ অনুযায়ী ডিফল্ট ভ্যালু
+      setTimeout(() => setSubmitSuccess(false), 5000);
     } catch (error) {
-      console.error("Submission Error:", error);
-      setSubmitSuccess(true);
-      setTimeout(() => setSubmitSuccess(false), 6000);
+      alert("Something went wrong. Please try again.");
     } finally {
       setIsSubmitting(false);
     }
@@ -347,21 +348,22 @@ export default function NsdaFreeCourse() {
             <div className="lg:col-span-7 bg-slate-50 border border-slate-200/80 rounded-2xl sm:rounded-3xl p-5 sm:p-10 space-y-6 shadow-sm">
               <div>
                 <h3 className="text-lg sm:text-2xl font-black text-slate-900">ফ্রি কোর্সে ভর্তির জন্য প্রি-রেজিস্ট্রেশন</h3>
-                <p className="text-xs sm:text-sm font-medium text-slate-500 mt-1">ফর্মটি পূরণ করুন। আমাদের প্রতিনিধি আপনার সাথে যোগাযোগ করে ব্যাচের সময় জানিয়ে দেবেন।</p>
+                <p className="text-xs sm:text-sm font-medium text-slate-500 mt-1">ফর্মটি পূরণ করুন। আমাদের প্রতিনিধি আপনার সাথে যোগাযোগ করে ব্যাচের সময় জানিয়ে দেবেন।</p>
               </div>
 
               {submitSuccess ? (
                 <div className="p-8 rounded-2xl bg-emerald-100 border border-emerald-200 text-center space-y-3">
                   <CheckCircle2 size={48} className="text-emerald-600 mx-auto animate-bounce" />
                   <h4 className="text-xl font-black text-emerald-900">প্রি-রেজিস্ট্রেশন সফল হয়েছে!</h4>
-                  <p className="text-xs sm:text-sm font-medium text-emerald-800">আমরা আপনার তথ্য পেয়েছি। শিঘ্রিই আমাদের অফিস থেকে আপনাকে ফোন করা হবে।</p>
+                  <p className="text-xs sm:text-sm font-medium text-emerald-800">আমরা আপনার তথ্য পেয়েছি। শীঘ্রই আমাদের অফিস থেকে আপনাকে ফোন করা হবে।</p>
                 </div>
               ) : (
                 <form onSubmit={handleFormSubmit} className="space-y-3.5 sm:space-y-4">
+                  {/* Row 1: Name and Phone */}
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
                     <div className="space-y-1 sm:space-y-1.5">
                       <label className="text-xs font-bold text-slate-700 block">আপনার সম্পূর্ণ নাম *</label>
-                      <input type="text" name="name" required value={formData.name} onChange={handleInputChange} placeholder="उदा. Md. Shakawat Hossain" className="w-full px-4 py-3 sm:py-3.5 rounded-xl bg-white border border-slate-200 text-xs sm:text-sm font-semibold text-slate-800 focus:outline-none focus:ring-2 focus:ring-emerald-600 shadow-2xs" />
+                      <input type="text" name="name" required value={formData.name} onChange={handleInputChange} placeholder="যেমন: Md. Shakawat Hossain" className="w-full px-4 py-3 sm:py-3.5 rounded-xl bg-white border border-slate-200 text-xs sm:text-sm font-semibold text-slate-800 focus:outline-none focus:ring-2 focus:ring-emerald-600 shadow-2xs" />
                     </div>
                     <div className="space-y-1 sm:space-y-1.5">
                       <label className="text-xs font-bold text-slate-700 block">মোবাইল বা হোয়াটসঅ্যাপ নম্বর *</label>
@@ -369,6 +371,7 @@ export default function NsdaFreeCourse() {
                     </div>
                   </div>
 
+                  {/* Row 2: NSDA Course Selection */}
                   <div className="space-y-1 sm:space-y-1.5">
                     <label className="text-xs font-bold text-slate-700 block">কোন কোর্সে ফ্রি ট্রেনিং করতে চান? *</label>
                     <div className="relative w-full">
@@ -389,13 +392,21 @@ export default function NsdaFreeCourse() {
                       <span>{isSubmitting ? 'প্রসেসিং হচ্ছে...' : 'ফ্রি কোর্সের জন্য প্রি-রেজিস্ট্রেশন করুন →'}</span>
                     </button>
                   </div>
-
+                  
                   <div className="flex items-center justify-center space-x-1.5 text-[10px] font-extrabold text-slate-400 uppercase tracking-widest pt-2">
                     <ShieldCheck size={14} className="text-emerald-500" />
                     <span>১০০% নিরাপদ ও সরকারি প্রজেক্ট সুরক্ষিত</span>
                   </div>
                 </form>
               )}
+
+              {/* WhatsApp Contact */}
+              <div className="pt-4 border-t border-slate-200/60 flex items-center justify-between text-xs font-bold text-slate-600">
+                <span>💬 জরুরি প্রয়োজনে?</span>
+                <a href="https://wa.me/8801818304081" target="_blank" rel="noopener noreferrer" className="text-emerald-600 hover:underline flex items-center space-x-1">
+                  <span>হোয়াটসঅ্যাপে মেসেজ দিন →</span>
+                </a>
+              </div>
             </div>
 
           </div>

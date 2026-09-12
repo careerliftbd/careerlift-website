@@ -11,8 +11,12 @@ import Services from './pages/Services/Services';
 import AboutUs from './pages/AboutUs/AboutUs';
 import NsdaFreeCourse from './pages/Courses/NsdaFreeCourse';
 import CourseDetails from './pages/Courses/CourseDetails';
-import AdminLogin from './pages/Admin/AdminLogin';
 import AdminDashboard from './pages/Admin/AdminDashboard';
+import NoticeBoard from './pages/Notices/NoticeBoard';
+import NoticeDetails from './pages/Notices/NoticeDetails';
+import GalleryPage from './pages/Gallery/GalleryPage';
+import AlumniPage from './pages/Alumni/AlumniPage';
+import AdminLogin from './pages/Admin/AdminLogin';
 
 function ScrollToHashElement() {
   const { hash, pathname } = useLocation();
@@ -34,10 +38,11 @@ function ScrollToHashElement() {
   return null;
 }
 
-// 👇 অ্যাডমিন রুটগুলোতে সাধারণ Navbar ও Footer হাইড করার জন্য লজিক
+// 👇 অ্যাডমিন রুটগুলোতে সাধারণ Navbar ও Footer হাইড করার জন্য আপডেটেড লজিক
 function LayoutWrapper() {
   const location = useLocation();
-  const isAdminRoute = location.pathname.startsWith('/admin');
+  // /admin অথবা /cl-secure দিয়ে শুরু হওয়া সব লিংকে Navbar/Footer হাইড হবে
+  const isAdminRoute = location.pathname.startsWith('/admin') || location.pathname.startsWith('/cl-secure');
 
   return (
     <div className="min-h-screen flex flex-col justify-between relative overflow-hidden">
@@ -63,7 +68,14 @@ function LayoutWrapper() {
           <Route path="/about-us" element={<AboutUs />} />
           <Route path="/nsda-free-course" element={<NsdaFreeCourse />} />
           <Route path="/course/:id" element={<CourseDetails />} />
-          <Route path="/admin-portal-login" element={<AdminLogin />} />
+          
+          <Route path="/notices" element={<NoticeBoard />} />
+          <Route path="/notice/:id" element={<NoticeDetails />} />
+          <Route path="/gallery" element={<GalleryPage />} />
+          <Route path="/alumni" element={<AlumniPage />} />
+          
+          {/* Admin Routes */}
+          <Route path="/cl-secure-gate-2026" element={<AdminLogin />} />
           <Route path="/admin-dashboard" element={<AdminDashboard />} />
         </Routes>
       </main>
