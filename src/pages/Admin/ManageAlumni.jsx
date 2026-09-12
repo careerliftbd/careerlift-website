@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { lmsSupabase } from '../../config/lmsDb';
-import { Users, ShieldAlert, Loader2, Search } from 'lucide-react';
+import { Users, ShieldAlert, Loader2, Search, ExternalLink } from 'lucide-react';
 
 export default function ManageAlumni() {
   const [alumni, setAlumni] = useState([]);
@@ -10,7 +10,6 @@ export default function ManageAlumni() {
   useEffect(() => {
     const fetchAlumni = async () => {
       setLoading(true);
-      // 👇 'Completed' স্ট্যাটাস দিয়ে ফিল্টার করা হয়েছে
       const { data, error } = await lmsSupabase
         .from('students')
         .select(`
@@ -43,27 +42,39 @@ export default function ManageAlumni() {
 
   return (
     <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden relative">
-      <div className="p-6 border-b border-slate-200 bg-slate-50 flex justify-between items-center">
+      <div className="p-6 border-b border-slate-200 bg-slate-50 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
         <h3 className="font-bold text-slate-800 flex items-center">
           <Users size={20} className="mr-2 text-blue-600"/> 
           Alumni Database <span className="ml-3 text-[10px] bg-amber-100 text-amber-700 px-2 py-1 rounded-full uppercase tracking-widest font-black border border-amber-200">Read Only</span>
         </h3>
         
-        <div className="relative">
-          <input 
-            type="text" 
-            placeholder="Search alumni..." 
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="pl-9 pr-4 py-2 border border-slate-200 rounded-lg text-sm focus:outline-none focus:border-blue-500 w-64"
-          />
-          <Search size={16} className="absolute left-3 top-2.5 text-slate-400" />
+        <div className="flex flex-col sm:flex-row items-center gap-3 w-full md:w-auto">
+          {/* 👇 Vercel Link Button 👇 */}
+          <a 
+            href="YOUR_VERCEL_LINK_HERE" 
+            target="_blank" 
+            rel="noopener noreferrer"
+            className="w-full sm:w-auto flex items-center justify-center gap-2 px-4 py-2 bg-slate-800 hover:bg-slate-900 text-white text-sm font-bold rounded-lg transition-colors shadow-sm"
+          >
+            LMS Dashboard <ExternalLink size={16} />
+          </a>
+
+          <div className="relative w-full sm:w-auto">
+            <input 
+              type="text" 
+              placeholder="Search alumni..." 
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="w-full pl-9 pr-4 py-2 border border-slate-200 rounded-lg text-sm focus:outline-none focus:border-blue-500 md:w-64"
+            />
+            <Search size={16} className="absolute left-3 top-2.5 text-slate-400" />
+          </div>
         </div>
       </div>
 
       <div className="bg-blue-50/50 border-b border-blue-100 p-4 flex items-center text-sm text-blue-800">
         <ShieldAlert size={18} className="mr-2 text-blue-600 shrink-0" />
-        <p><strong>Note:</strong> This data is connected remotely to the LMS database. Showing only 'Completed' status students.</p>
+        <p><strong>Note:</strong> This data is connected remotely to the LMS database. To edit or manage students, please open the LMS Dashboard.</p>
       </div>
 
       <div className="overflow-x-auto p-4">
@@ -83,7 +94,6 @@ export default function ManageAlumni() {
             ) : (
               filteredAlumni.map((student) => {
                 const enrollment = student.enrollments && student.enrollments.length > 0 ? student.enrollments[0] : null;
-                const status = enrollment?.course_status || 'Unknown';
                 
                 return (
                   <tr key={student.id} className="border-b border-slate-100 hover:bg-slate-50 transition-colors">
