@@ -91,7 +91,7 @@ export default function HeroSection() {
           <div className="lg:col-span-7 space-y-5 text-center lg:text-left">
             
             <div className="inline-flex items-center space-x-2 text-xs font-black tracking-widest uppercase text-blue-400 bg-blue-500/10 border border-blue-500/20 px-4 py-1.5 rounded-full backdrop-blur-md">
-              <Sparkles size={14} className="text-amber-400 animate-spin-slow" />
+              
               <span>{currentLang === 'EN' ? 'Global Education & NSDA Certified Skills' : 'আন্তর্জাতিক শিক্ষা ও সরকারি স্বীকৃত স্কিল ডেভেলপমেন্ট'}</span>
             </div>
 
